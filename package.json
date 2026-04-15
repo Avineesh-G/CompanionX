@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/Avineesh-G/CompanionX/issues"
   },
-  "homepage": "https://github.com/Avineesh-G/CompanionX#readme",
+  "homepage": "https://avineesh-g.github.io/CompanionX/",
   "dependencies": {
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
