@@ -10,9 +10,18 @@ module.exports = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        coral: "#FF6A3D",
-        navy: "#1F2A35",
-        "soft-white": "#F6F7FA",
+        coral: "#6366F1", // Rebrand coral to Electric Indigo
+        navy: "#0F172A",  // Rebrand navy to Deep Slate/Slate-900
+        "soft-white": "#F8FAFC", // Rebrand soft-white to ultra-clean Slate-50
+        brand: {
+          primary: "#4F46E5",
+          primaryHover: "#4338CA",
+          accent: "#10B981",
+          accentLight: "#D1FAE5",
+          dark: "#0F172A",
+          muted: "#64748B",
+          border: "#E2E8F0",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -43,13 +52,13 @@ module.exports = {
         },
       },
       fontFamily: {
-        display: ['Poppins', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', 'sans-serif'],
         body: ['Inter', 'sans-serif'],
         handwritten: ['Kalam', 'cursive'],
       },
       borderRadius: {
-        '3xl': '28px',
-        '4xl': '34px',
+        '3xl': '24px',
+        '4xl': '32px',
         xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -57,10 +66,10 @@ module.exports = {
         xs: "calc(var(--radius) - 6px)",
       },
       boxShadow: {
-        'card': '0 18px 40px rgba(0, 0, 0, 0.12)',
-        'card-hover': '0 24px 50px rgba(0, 0, 0, 0.16)',
-        'headline': '0 14px 30px rgba(0, 0, 0, 0.08)',
-        'sticker': '0 6px 14px rgba(0, 0, 0, 0.14)',
+        'card': '0 20px 40px -15px rgba(15, 23, 42, 0.06)',
+        'card-hover': '0 30px 60px -15px rgba(15, 23, 42, 0.12)',
+        'headline': '0 10px 25px -5px rgba(15, 23, 42, 0.05)',
+        'sticker': '0 4px 12px rgba(15, 23, 42, 0.08)',
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
       },
       keyframes: {
