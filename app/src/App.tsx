@@ -290,9 +290,10 @@ export default function App() {
 
           </div>
         </div>
+      </section>
 
-        {/* Smart Search Bar Anchor */}
-        <div id="search-bar" className="absolute left-0 right-0 -bottom-24 w-full px-6 z-30">
+      {/* Smart Search Bar Anchor */}
+      <div id="search-bar" className="relative -mt-24 w-full px-6 z-30">
           <div className="max-w-5xl mx-auto bg-white rounded-[2rem] shadow-[0_20px_60px_-10px_rgba(15,23,42,0.12)] border border-slate-200/50 p-4 md:p-6 transition-shadow hover:shadow-[0_25px_70px_-10px_rgba(15,23,42,0.18)]">
             <div className="flex flex-col lg:flex-row gap-4 items-end">
               <LocationInput 
@@ -384,7 +385,6 @@ export default function App() {
             </div>
           </div>
         </div>
-      </section>
 
       {/* Bus Search Results Display */}
       {!isSearched ? (
