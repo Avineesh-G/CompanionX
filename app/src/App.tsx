@@ -183,7 +183,8 @@ export default function App() {
   const triggerGmailLogin = () => {
     setGmailAddress('avineesh.companionx@gmail.com');
     setAuthMethod('gmail');
-    setAuthStep('verify_id');
+    setIsSimulatedVerified(true);
+    setAuthStep('success');
   };
 
   const handleSeatSelect = (seat: string, isIntrCity = false) => {
@@ -588,7 +589,7 @@ export default function App() {
                           {authMethod === 'gmail' ? gmailAddress : `+91 ${mobileNumber}`}
                         </p>
                         <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
-                          <Check className="w-3 h-3 text-emerald-600" /> Government ID Verified
+                          <Check className="w-3 h-3 text-emerald-600" /> {authMethod === 'gmail' ? 'Google Account Verified' : 'Government ID Verified'}
                         </p>
                       </div>
                     </div>
