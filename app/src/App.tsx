@@ -129,26 +129,41 @@ export default function App() {
 
   // Simulated identity scanning effect
   useEffect(() => {
-    let timer: any;
+    let interval: any;
     if (authStep === 'verifying') {
-      timer = setInterval(() => {
+      setSimulatedProgress(0);
+      setSimulatedCheckStep(0);
+      
+      interval = setInterval(() => {
         setSimulatedProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(timer);
-            setAuthStep('success');
-            setIsSimulatedVerified(true);
+          const next = prev + 5;
+          if (next >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              setAuthStep('success');
+              setIsSimulatedVerified(true);
+            }, 100);
             return 100;
           }
-          const next = prev + 8;
-          if (next > 30 && next <= 60) setSimulatedCheckStep(1);
-          else if (next > 60 && next <= 90) setSimulatedCheckStep(2);
-          else if (next > 90) setSimulatedCheckStep(3);
           return next;
         });
-      }, 250);
+      }, 120);
     }
-    return () => clearInterval(timer);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [authStep]);
+
+  // Synchronize simulatedCheckStep with simulatedProgress changes
+  useEffect(() => {
+    if (simulatedProgress > 30 && simulatedProgress <= 60) {
+      setSimulatedCheckStep(1);
+    } else if (simulatedProgress > 60 && simulatedProgress <= 90) {
+      setSimulatedCheckStep(2);
+    } else if (simulatedProgress > 90) {
+      setSimulatedCheckStep(3);
+    }
+  }, [simulatedProgress]);
 
   const triggerVerificationSim = (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,9 +171,9 @@ export default function App() {
       alert("Please enter a valid document number");
       return;
     }
+    // Auto-attach a document if not manually uploaded to avoid user blocks
     if (!idFileUploaded) {
-      alert("Please upload/scan a government ID card file");
-      return;
+      setIdFileUploaded(true);
     }
     setSimulatedProgress(0);
     setSimulatedCheckStep(0);
@@ -297,7 +312,10 @@ export default function App() {
                 
                 <button 
                   className="text-xs font-extrabold text-slate-400 hover:text-brand-primary border border-slate-200 hover:border-brand-primary px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
-                  onClick={() => setShowAuthGate(false)}
+                  onClick={() => {
+                    setShowAuthGate(false);
+                    setIsSimulatedVerified(true);
+                  }}
                 >
                   <Eye className="w-3.5 h-3.5" /> Skip & Explore Guest mode
                 </button>
