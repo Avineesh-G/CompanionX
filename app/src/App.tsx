@@ -3,7 +3,7 @@ import {
   MapPin, Calendar, Users,
   ShieldCheck, Star, Shield, MessageSquare, UserCheck,
   CheckCircle2, ArrowRight, Check, Zap, Bus, AlertTriangle,
-  Sparkles, Award, Mail, Phone, Lock, Camera, ArrowLeft, Smartphone, Upload, Eye
+  Sparkles, Award, Mail, Phone, Lock, Camera, ArrowLeft, Smartphone, Upload, Eye, LogOut
 } from 'lucide-react';
 
 const CITIES = [
@@ -637,12 +637,33 @@ export default function App() {
           </div>
           <div className="flex items-center gap-4">
             {isSimulatedVerified ? (
-              <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200/60 pl-2.5 pr-4 py-1.5 rounded-xl shadow-sm">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop" className="w-7 h-7 rounded-full object-cover border border-white shadow-sm" alt="Mini Avatar" />
-                <div>
-                  <p className="text-[10px] font-bold text-slate-800 leading-none">Avineesh G</p>
-                  <p className="text-[8px] text-emerald-600 font-bold leading-none mt-0.5">ID Verified</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200/60 pl-2.5 pr-4 py-1.5 rounded-xl shadow-sm">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop" className="w-7 h-7 rounded-full object-cover border border-white shadow-sm" alt="Mini Avatar" />
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-800 leading-none">Avineesh G</p>
+                    <p className="text-[8px] text-emerald-600 font-bold leading-none mt-0.5">
+                      {authMethod === 'gmail' ? 'Google Verified' : 'ID Verified'}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    setIsSimulatedVerified(false);
+                    setAuthStep('login');
+                    setShowAuthGate(true); // Return to login gate screen
+                    // Reset fields
+                    setMobileNumber('');
+                    setOtpCode(['','','','','','']);
+                    setIdNumber('');
+                    setIdFileUploaded(false);
+                  }}
+                  className="text-xs font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 border border-slate-200 hover:border-red-200 px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                  title="Log Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Log Out</span>
+                </button>
               </div>
             ) : (
               <>
