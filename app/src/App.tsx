@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MapPin, Calendar, Users,
   ShieldCheck, Star, Shield, MessageSquare, UserCheck,
   CheckCircle2, ArrowRight, Check, Zap, Bus, AlertTriangle,
-  Sparkles, Award
+  Sparkles, Award, Mail, Phone, Lock, Camera, ArrowLeft, Smartphone, Upload, Eye
 } from 'lucide-react';
 
 const CITIES = [
@@ -83,6 +83,7 @@ function LocationInput({
 }
 
 export default function App() {
+  // Navigation & Search State
   const [saveMoneyMode, setSaveMoneyMode] = useState(true);
   const [fromCity, setFromCity] = useState("");
   const [toCity, setToCity] = useState("");
@@ -90,6 +91,85 @@ export default function App() {
   const [selectedBus, setSelectedBus] = useState<string | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [passengerCount, setPassengerCount] = useState<number>(1);
+
+  // Authentication & Verification Gate State
+  const [showAuthGate, setShowAuthGate] = useState(true);
+  const [authStep, setAuthStep] = useState<'login' | 'otp' | 'verify_id' | 'verifying' | 'success'>('login');
+  const [authMethod, setAuthMethod] = useState<'mobile' | 'gmail'>('mobile');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [gmailAddress, setGmailAddress] = useState('');
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [idType, setIdType] = useState<'aadhaar' | 'passport' | 'pan'>('aadhaar');
+  const [idNumber, setIdNumber] = useState('');
+  const [idFileUploaded, setIdFileUploaded] = useState(false);
+  const [isSimulatedVerified, setIsSimulatedVerified] = useState(false);
+  const [simulatedProgress, setSimulatedProgress] = useState(0);
+  const [simulatedCheckStep, setSimulatedCheckStep] = useState(0);
+
+  // Auto OTP shift helper
+  const handleOtpChange = (index: number, val: string) => {
+    if (val.length > 1) return;
+    const newOtp = [...otpCode];
+    newOtp[index] = val;
+    setOtpCode(newOtp);
+
+    // Shift focus forward
+    if (val && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
+  // Simulated identity scanning effect
+  useEffect(() => {
+    let timer: any;
+    if (authStep === 'verifying') {
+      timer = setInterval(() => {
+        setSimulatedProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(timer);
+            setAuthStep('success');
+            setIsSimulatedVerified(true);
+            return 100;
+          }
+          const next = prev + 8;
+          if (next > 30 && next <= 60) setSimulatedCheckStep(1);
+          else if (next > 60 && next <= 90) setSimulatedCheckStep(2);
+          else if (next > 90) setSimulatedCheckStep(3);
+          return next;
+        });
+      }, 250);
+    }
+    return () => clearInterval(timer);
+  }, [authStep]);
+
+  const triggerVerificationSim = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!idNumber) {
+      alert("Please enter a valid document number");
+      return;
+    }
+    if (!idFileUploaded) {
+      alert("Please upload/scan a government ID card file");
+      return;
+    }
+    setSimulatedProgress(0);
+    setSimulatedCheckStep(0);
+    setAuthStep('verifying');
+  };
+
+  const triggerGmailLogin = () => {
+    setGmailAddress('avineesh.companionx@gmail.com');
+    setAuthMethod('gmail');
+    setAuthStep('verify_id');
+  };
 
   const handleSeatSelect = (seat: string, isIntrCity = false) => {
     if (selectedSeats.includes(seat)) {
@@ -111,13 +191,11 @@ export default function App() {
       const col = seat.replace(/\d+/, '');
       
       if (isIntrCity) {
-        // IntrCity has 2+2 layout: columns A, B (left) and C, D (right)
         if (col === 'A') adjacentSeat = `${row}B`;
         else if (col === 'B') adjacentSeat = `${row}A`;
         else if (col === 'C') adjacentSeat = `${row}D`;
         else if (col === 'D') adjacentSeat = `${row}C`;
       } else {
-        // Zingbus has 2+1 layout: columns A (single side) and B, C (double side)
         if (col === 'B') adjacentSeat = `${row}C`;
         else if (col === 'C') adjacentSeat = `${row}B`;
         else if (col === 'A') adjacentSeat = `${parseInt(row)+1}A`;
@@ -143,7 +221,385 @@ export default function App() {
   return (
     <div className="min-h-screen bg-soft-white font-body text-slate-900 overflow-x-hidden pt-20 relative">
       <div className="grain-overlay"></div>
-      
+
+      {/* 🛡️ MULTI-STEP IDENTITY ONBOARDING & VERIFICATION GATE */}
+      {showAuthGate && (
+        <div className="fixed inset-0 bg-slate-950 z-[9999] overflow-y-auto flex items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-12 w-full">
+            
+            {/* LEFT COLUMN: Editorial branding & safety assurance panel */}
+            <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-tr from-brand-primary to-indigo-900 text-white p-16 flex-col justify-between relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent)]" />
+              
+              {/* Top lock decoration */}
+              <div className="relative z-10 flex items-center gap-2.5">
+                <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20">
+                  <Bus className="w-5.5 h-5.5 text-white" />
+                </div>
+                <span className="font-display font-extrabold text-xl tracking-tight text-white">
+                  Companion<span className="text-emerald-400">X</span>
+                </span>
+              </div>
+
+              {/* Brand message */}
+              <div className="relative z-10 my-auto">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-emerald-300 text-xs font-semibold mb-6 shadow-sm">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Government ID Verified Rides</span>
+                </div>
+                <h2 className="font-display text-4xl font-extrabold leading-tight mb-6">
+                  100% Identity-Vetted co-traveling network.
+                </h2>
+                <p className="text-indigo-100/80 text-sm leading-relaxed mb-8 max-w-sm">
+                  To activate fare splitting savings up to 40%, we ensure every member cross-checks their profile using government biometrics. 
+                </p>
+
+                {/* Features list */}
+                <div className="space-y-4">
+                  {[
+                    "Zero awkward money talks.",
+                    "Verified co-traveler credentials.",
+                    "Active distress safety protocols."
+                  ].map((feat, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="bg-emerald-500/20 text-emerald-300 p-1 rounded-full">
+                        <Check className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-bold text-white/90">{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer details */}
+              <div className="relative z-10 flex items-center gap-3 text-xs text-white/60 font-semibold">
+                <Lock className="w-4 h-4 text-emerald-400" />
+                <span>AES-256 Encrypted Government Biometric Port</span>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: Highly Premium Interactive Verification Forms */}
+            <div className="lg:col-span-7 bg-white flex flex-col justify-between p-8 md:p-16 relative">
+              
+              {/* Top back button / skip */}
+              <div className="flex justify-between items-center mb-10">
+                {authStep !== 'login' && authStep !== 'verifying' && authStep !== 'success' ? (
+                  <button 
+                    className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-700 transition-colors"
+                    onClick={() => {
+                      if (authStep === 'otp') setAuthStep('login');
+                      else if (authStep === 'verify_id') setAuthStep('login');
+                    }}
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Go Back
+                  </button>
+                ) : <div />}
+                
+                <button 
+                  className="text-xs font-extrabold text-slate-400 hover:text-brand-primary border border-slate-200 hover:border-brand-primary px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+                  onClick={() => setShowAuthGate(false)}
+                >
+                  <Eye className="w-3.5 h-3.5" /> Skip & Explore Guest mode
+                </button>
+              </div>
+
+              {/* AUTHENTICATION ROUTING FORM CARD */}
+              <div className="max-w-md w-full mx-auto my-auto">
+                
+                {/* STEP 1: LOGIN METHOD SELECTOR */}
+                {authStep === 'login' && (
+                  <div className="animate-fade-in">
+                    <h3 className="font-display font-extrabold text-2xl md:text-3xl text-slate-900 mb-2">Create Verified Account</h3>
+                    <p className="text-xs font-semibold text-slate-400 mb-8">Enter details to initiate government biometric verification.</p>
+
+                    {/* Google/Gmail OAuth simulated button */}
+                    <button 
+                      className="w-full border border-slate-200/80 hover:border-indigo-400 bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-sm hover:scale-[1.01] mb-5 text-sm"
+                      onClick={triggerGmailLogin}
+                    >
+                      <Mail className="w-4 h-4 text-red-500 shrink-0" />
+                      Continue with Google / Gmail
+                    </button>
+
+                    <div className="flex items-center gap-3 my-6">
+                      <div className="flex-1 border-t border-slate-100" />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-indigo-500" /> or login with phone
+                      </span>
+                      <div className="flex-1 border-t border-slate-100" />
+                    </div>
+
+                    {/* Mobile Login Form */}
+                    <form onSubmit={(e) => { e.preventDefault(); if (mobileNumber.length === 10) { setAuthMethod('mobile'); setAuthStep('otp'); } else { alert('Please enter a valid 10-digit mobile number'); } }}>
+                      <div className="mb-5">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Mobile Number</label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-extrabold text-slate-500 border-r border-slate-200 pr-3">+91</span>
+                          <input 
+                            type="tel"
+                            required
+                            placeholder="Enter 10-digit mobile"
+                            className="w-full pl-16 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/5 transition-all"
+                            value={mobileNumber}
+                            onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').substring(0, 10))}
+                          />
+                        </div>
+                      </div>
+
+                      <button 
+                        type="submit"
+                        className="w-full bg-slate-950 text-white font-bold py-4 rounded-2xl text-sm hover:bg-slate-800 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 shadow-md shadow-slate-950/10"
+                      >
+                        Request Mobile OTP
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* STEP 2: SIMULATED MOBILE OTP VERIFICATION */}
+                {authStep === 'otp' && (
+                  <div className="animate-fade-in">
+                    <h3 className="font-display font-extrabold text-2xl md:text-3xl text-slate-900 mb-2">Confirm OTP Code</h3>
+                    <p className="text-xs font-semibold text-slate-400 mb-3 flex items-center gap-1.5">
+                      <Smartphone className="w-4 h-4 text-brand-primary" />
+                      One-time code sent securely to <span className="text-slate-800 font-extrabold">+91 {mobileNumber}</span>
+                    </p>
+
+                    <form onSubmit={(e) => { e.preventDefault(); setAuthStep('verify_id'); }}>
+                      <div className="flex gap-2 justify-between my-8">
+                        {otpCode.map((digit, i) => (
+                          <input 
+                            key={i}
+                            id={`otp-${i}`}
+                            type="text"
+                            maxLength={1}
+                            required
+                            className="w-12 h-14 bg-slate-50 border border-slate-200 rounded-xl text-center text-xl font-black text-slate-800 focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/5 outline-none transition-all"
+                            value={digit}
+                            onChange={(e) => handleOtpChange(i, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                          />
+                        ))}
+                      </div>
+
+                      <button 
+                        type="submit"
+                        className="w-full bg-slate-950 text-white font-bold py-4 rounded-2xl text-sm hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                      >
+                        Verify OTP Code
+                        <Check className="w-4 h-4" />
+                      </button>
+
+                      <p className="text-center text-xs text-slate-400 font-bold mt-5">
+                        Didn't receive code? <button type="button" className="text-brand-primary hover:underline ml-1">Resend SMS</button>
+                      </p>
+                    </form>
+                  </div>
+                )}
+
+                {/* STEP 3: MANDATORY GOVERNMENT ID VERIFICATION */}
+                {authStep === 'verify_id' && (
+                  <div className="animate-fade-in">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-brand-primary text-[10px] font-bold mb-4 shadow-sm">
+                      <Award className="w-3.5 h-3.5" />
+                      <span>Companion Mode Mandated Step</span>
+                    </div>
+                    <h3 className="font-display font-extrabold text-2xl text-slate-900 mb-2">Government Identity Vetting</h3>
+                    <p className="text-xs font-semibold text-slate-400 mb-6 leading-relaxed">
+                      Every smart splitting travel profile on CompanionX undergoes strict vetting to guarantee 100% mutual trust.
+                    </p>
+
+                    <form onSubmit={triggerVerificationSim}>
+                      
+                      {/* Document Type Selector */}
+                      <div className="mb-4">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Select Identity Type</label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {[
+                            { key: 'aadhaar', label: 'Aadhaar Card' },
+                            { key: 'passport', label: 'Passport' },
+                            { key: 'pan', label: 'PAN Card' }
+                          ].map((doc) => (
+                            <button
+                              key={doc.key}
+                              type="button"
+                              className={`py-3 px-2 rounded-xl text-xs font-bold border transition-all text-center ${
+                                idType === doc.key 
+                                  ? 'bg-indigo-50 border-brand-primary text-brand-primary shadow-sm' 
+                                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                              }`}
+                              onClick={() => {
+                                setIdType(doc.key as any);
+                                setIdNumber('');
+                                setIdFileUploaded(false);
+                              }}
+                            >
+                              {doc.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Card Document number */}
+                      <div className="mb-4">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                          {idType === 'aadhaar' ? 'Aadhaar Number (12 digit)' : idType === 'passport' ? 'Passport Number' : 'PAN Card Number'}
+                        </label>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder={idType === 'aadhaar' ? 'XXXX XXXX XXXX' : idType === 'passport' ? 'Enter passport key' : 'Enter PAN format'}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-brand-primary transition-all text-sm"
+                          value={idNumber}
+                          onChange={(e) => {
+                            let val = e.target.value;
+                            if (idType === 'aadhaar') {
+                              val = val.replace(/\D/g, '').substring(0, 12);
+                            }
+                            setIdNumber(val);
+                          }}
+                        />
+                      </div>
+
+                      {/* File upload scanner card */}
+                      <div className="mb-6">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Upload Document File (Front & Back)</label>
+                        <div 
+                          className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center ${
+                            idFileUploaded 
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
+                              : 'bg-slate-50/50 border-slate-200 hover:bg-slate-50 hover:border-brand-primary'
+                          }`}
+                          onClick={() => setIdFileUploaded(true)}
+                        >
+                          {idFileUploaded ? (
+                            <div className="animate-scale-in">
+                              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                              <span className="text-xs font-bold block">Document Attached Successfully</span>
+                              <span className="text-[10px] font-semibold opacity-70">government_doc_secured.pdf</span>
+                            </div>
+                          ) : (
+                            <div>
+                              <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                              <span className="text-xs font-bold block text-slate-700">Drag file or click to scan</span>
+                              <span className="text-[10px] font-semibold text-slate-400">PDF, PNG or JPEG up to 10MB</span>
+                              <button 
+                                type="button" 
+                                className="mt-3 text-[10px] font-bold text-brand-primary hover:text-brand-primaryHover flex items-center gap-1.5 mx-auto bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100"
+                                onClick={(e) => { e.stopPropagation(); setIdFileUploaded(true); alert("Simulated Camera Biometric selfie-scan initiated."); }}
+                              >
+                                <Camera className="w-3.5 h-3.5 animate-pulse" /> Scan via Selfie Camera
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <button 
+                        type="submit"
+                        className="w-full bg-slate-950 text-white font-bold py-4 rounded-2xl text-sm hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-md"
+                      >
+                        Verify Identity & Access Fleet
+                        <Shield className="w-4 h-4 text-emerald-400" />
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* STEP 4: SCANNING & BIOMETRIC VERIFICATION PROGRESS */}
+                {authStep === 'verifying' && (
+                  <div className="animate-fade-in text-center p-4">
+                    {/* Glowing Scan circle */}
+                    <div className="w-24 h-24 rounded-full border-4 border-slate-100 border-t-brand-primary animate-spin mx-auto mb-8 relative flex items-center justify-center">
+                      <Lock className="w-8 h-8 text-indigo-500 absolute animate-pulse" />
+                    </div>
+
+                    <h3 className="font-display font-extrabold text-2xl text-slate-900 mb-2">Analyzing Secure Registry</h3>
+                    <p className="text-xs font-semibold text-slate-400 mb-8">Establishing encrypted handshake with National Biometric API...</p>
+
+                    {/* Progress tracking details */}
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 text-left max-w-sm mx-auto shadow-sm">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Verification Progress</span>
+                        <span className="text-xs font-extrabold text-brand-primary">{simulatedProgress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mb-6">
+                        <div className="bg-brand-primary h-full transition-all duration-300" style={{ width: `${simulatedProgress}%` }}></div>
+                      </div>
+
+                      <ul className="space-y-3 text-xs font-bold text-slate-500">
+                        <li className="flex items-center gap-2.5">
+                          <div className={`w-2.5 h-2.5 rounded-full ${simulatedCheckStep >= 0 ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30' : 'bg-slate-300'}`} />
+                          <span className={simulatedCheckStep >= 0 ? 'text-slate-800' : ''}>Querying Registry Records...</span>
+                        </li>
+                        <li className="flex items-center gap-2.5">
+                          <div className={`w-2.5 h-2.5 rounded-full ${simulatedCheckStep >= 1 ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30' : 'bg-slate-300'}`} />
+                          <span className={simulatedCheckStep >= 1 ? 'text-slate-800' : ''}>Analyzing Integrity Signatures...</span>
+                        </li>
+                        <li className="flex items-center gap-2.5">
+                          <div className={`w-2.5 h-2.5 rounded-full ${simulatedCheckStep >= 2 ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30' : 'bg-slate-300'}`} />
+                          <span className={simulatedCheckStep >= 2 ? 'text-slate-800' : ''}>Validating Government Cryptography...</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 5: ONBOARDING SUCCESS BADGE */}
+                {authStep === 'success' && (
+                  <div className="animate-scale-in text-center">
+                    <div className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md shadow-emerald-500/5">
+                      <ShieldCheck className="w-10 h-10 text-emerald-600 animate-pulse" />
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold mb-4 uppercase tracking-wider">
+                      <Sparkles className="w-3.5 h-3.5 fill-emerald-700" />
+                      <span>Account Elite Vetted</span>
+                    </div>
+
+                    <h3 className="font-display font-extrabold text-2xl md:text-3xl text-slate-900 mb-2">Welcome to CompanionX</h3>
+                    <p className="text-xs font-semibold text-slate-400 mb-8 max-w-xs mx-auto leading-relaxed">
+                      Your identity verification is successful. Split-pricing mode and live co-travel matcher dashboard are now fully unlocked!
+                    </p>
+
+                    <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-2xl text-left max-w-xs mx-auto mb-8 flex items-center gap-3.5 shadow-sm">
+                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop" className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md" alt="Avatar" />
+                      <div>
+                        <p className="font-bold text-xs text-slate-800">
+                          {authMethod === 'gmail' ? gmailAddress : `+91 ${mobileNumber}`}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                          <Check className="w-3 h-3 text-emerald-600" /> Government ID Verified
+                        </p>
+                      </div>
+                    </div>
+
+                    <button 
+                      className="w-full bg-slate-950 text-white font-bold py-4 rounded-2xl text-sm hover:bg-slate-800 transition-all shadow-md flex items-center justify-center gap-2 group hover:scale-[1.01]"
+                      onClick={() => {
+                        setShowAuthGate(false);
+                        setIsSearched(false);
+                      }}
+                    >
+                      Enter Booking Dashboard
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Bottom encryption assurance */}
+              <div className="text-center text-[10px] text-slate-400 font-semibold tracking-wider uppercase mt-10">
+                🔒 Protected by Aadhaar biometrics & AES-256 secure channel encryption.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-xl z-50 border-b border-slate-200/50">
         <div className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
@@ -161,10 +617,36 @@ export default function App() {
             <a href="#pricing" className="hover:text-brand-primary transition-colors">Premium Plans</a>
           </div>
           <div className="flex items-center gap-4">
-            <button className="hidden sm:block text-sm font-semibold text-slate-700 hover:text-brand-primary transition-colors">Log In</button>
-            <button className="bg-slate-950 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-slate-950/10 hover:bg-slate-800 transition-all hover:scale-[1.02]">
-              Join CompanionX
-            </button>
+            {isSimulatedVerified ? (
+              <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200/60 pl-2.5 pr-4 py-1.5 rounded-xl shadow-sm">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop" className="w-7 h-7 rounded-full object-cover border border-white shadow-sm" alt="Mini Avatar" />
+                <div>
+                  <p className="text-[10px] font-bold text-slate-800 leading-none">Avineesh G</p>
+                  <p className="text-[8px] text-emerald-600 font-bold leading-none mt-0.5">ID Verified</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button 
+                  className="hidden sm:block text-sm font-semibold text-slate-700 hover:text-brand-primary transition-colors"
+                  onClick={() => {
+                    setAuthStep('login');
+                    setShowAuthGate(true);
+                  }}
+                >
+                  Log In
+                </button>
+                <button 
+                  className="bg-slate-950 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-slate-950/10 hover:bg-slate-800 transition-all hover:scale-[1.02]"
+                  onClick={() => {
+                    setAuthStep('login');
+                    setShowAuthGate(true);
+                  }}
+                >
+                  Join CompanionX
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -294,97 +776,103 @@ export default function App() {
 
       {/* Smart Search Bar Anchor */}
       <div id="search-bar" className="relative -mt-24 w-full px-6 z-30">
-          <div className="max-w-5xl mx-auto bg-white rounded-[2rem] shadow-[0_20px_60px_-10px_rgba(15,23,42,0.12)] border border-slate-200/50 p-4 md:p-6 transition-shadow hover:shadow-[0_25px_70px_-10px_rgba(15,23,42,0.18)]">
-            <div className="flex flex-col lg:flex-row gap-4 items-end">
-              <LocationInput 
-                label="From" 
-                placeholder="Departure city" 
-                value={fromCity} 
-                onChange={(val) => { setFromCity(val); setIsSearched(false); }} 
-                icon={MapPin} 
-                iconColorClass="text-slate-400" 
-              />
-              <LocationInput 
-                label="To" 
-                placeholder="Arrival city" 
-                value={toCity} 
-                onChange={(val) => { setToCity(val); setIsSearched(false); }} 
-                icon={MapPin} 
-                iconColorClass="text-brand-primary" 
-              />
-              
-              <div className="flex-1 w-full relative">
-                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Date</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
-                  <input 
-                    type="date" 
-                    defaultValue="2026-05-20"
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 rounded-2xl focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 outline-none transition-all font-semibold text-slate-700" 
-                  />
-                </div>
+        <div className="max-w-5xl mx-auto bg-white rounded-[2rem] shadow-[0_20px_60px_-10px_rgba(15,23,42,0.12)] border border-slate-200/50 p-4 md:p-6 transition-shadow hover:shadow-[0_25px_70px_-10px_rgba(15,23,42,0.18)]">
+          <div className="flex flex-col lg:flex-row gap-4 items-end">
+            <LocationInput 
+              label="From" 
+              placeholder="Departure city" 
+              value={fromCity} 
+              onChange={(val) => { setFromCity(val); setIsSearched(false); }} 
+              icon={MapPin} 
+              iconColorClass="text-slate-400" 
+            />
+            <LocationInput 
+              label="To" 
+              placeholder="Arrival city" 
+              value={toCity} 
+              onChange={(val) => { setToCity(val); setIsSearched(false); }} 
+              icon={MapPin} 
+              iconColorClass="text-brand-primary" 
+            />
+            
+            <div className="flex-1 w-full relative">
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                <input 
+                  type="date" 
+                  defaultValue="2026-05-20"
+                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 rounded-2xl focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 outline-none transition-all font-semibold text-slate-700" 
+                />
               </div>
+            </div>
 
-              <div className="flex-1 w-full relative">
-                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Passengers</label>
-                <div className="relative">
-                  <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
-                  <select 
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 rounded-2xl focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 outline-none transition-all font-semibold text-slate-700 appearance-none cursor-pointer"
-                    value={passengerCount}
-                    onChange={(e) => {
-                      setPassengerCount(parseInt(e.target.value));
-                      setSelectedSeats([]); // reset seats
-                    }}
-                  >
-                    <option value={1}>1 Passenger</option>
-                    <option value={2}>2 Passengers</option>
-                  </select>
-                </div>
+            <div className="flex-1 w-full relative">
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Passengers</label>
+              <div className="relative">
+                <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                <select 
+                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 rounded-2xl focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 outline-none transition-all font-semibold text-slate-700 appearance-none cursor-pointer"
+                  value={passengerCount}
+                  onChange={(e) => {
+                    setPassengerCount(parseInt(e.target.value));
+                    setSelectedSeats([]); // reset seats
+                  }}
+                >
+                  <option value={1}>1 Passenger</option>
+                  <option value={2}>2 Passengers</option>
+                </select>
               </div>
+            </div>
 
-              <button 
-                className="w-full lg:w-auto bg-slate-950 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all h-[54px] flex items-center justify-center shadow-md shadow-slate-950/10 hover:scale-[1.01]"
-                onClick={() => {
-                  if (fromCity && toCity) {
+            <button 
+              className="w-full lg:w-auto bg-slate-950 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all h-[54px] flex items-center justify-center shadow-md shadow-slate-950/10 hover:scale-[1.01]"
+              onClick={() => {
+                if (fromCity && toCity) {
+                  // Guard Search by Verification Requirements
+                  if (!isSimulatedVerified) {
+                    setAuthStep('login');
+                    setShowAuthGate(true);
+                  } else {
                     setIsSearched(true);
                     setSelectedBus(null);
                     setSelectedSeats([]);
-                  } else {
-                    alert("Please select both Departure and Arrival cities!");
                   }
-                }}
-              >
-                Search Buses
-              </button>
-            </div>
+                } else {
+                  alert("Please select both Departure and Arrival cities!");
+                }
+              }}
+            >
+              Search Buses
+            </button>
+          </div>
 
-            {/* Smart mode section */}
-            <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center bg-indigo-50/40 px-4 py-3.5 rounded-2xl border-dashed border border-indigo-100">
-              <div className="flex items-center gap-3">
-                <div className="bg-brand-primary text-white p-1.5 rounded-lg">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-700 block">Companion Split Mode Enabled</span>
-                  <span className="text-[10px] font-semibold text-slate-400">Match with a co-traveler on this route to unlock splitting savings up to 40%.</span>
-                </div>
+          {/* Smart mode section */}
+          <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center bg-indigo-50/40 px-4 py-3.5 rounded-2xl border-dashed border border-indigo-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-brand-primary text-white p-1.5 rounded-lg">
+                <Zap className="w-4 h-4" />
               </div>
-              <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={saveMoneyMode}
-                  onChange={() => {
-                    setSaveMoneyMode(!saveMoneyMode);
-                    setSelectedSeats([]); // Reset seats to clear calculations
-                  }}
-                />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
-              </label>
+              <div>
+                <span className="text-xs font-bold text-slate-700 block">Companion Split Mode Enabled</span>
+                <span className="text-[10px] font-semibold text-slate-400">Match with a co-traveler on this route to unlock splitting savings up to 40%.</span>
+              </div>
             </div>
+            <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={saveMoneyMode}
+                onChange={() => {
+                  setSaveMoneyMode(!saveMoneyMode);
+                  setSelectedSeats([]); // Reset seats to clear calculations
+                }}
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+            </label>
           </div>
         </div>
+      </div>
 
       {/* Bus Search Results Display */}
       {!isSearched ? (
@@ -518,7 +1006,6 @@ export default function App() {
                             {/* Dashboard/Driver section */}
                             <div className="w-full max-w-[280px] flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rear Coach Entrance</span>
-                              {/* Steering wheel vector icon representation */}
                               <div className="w-7 h-7 rounded-full border-2 border-slate-300 flex items-center justify-center">
                                 <div className="w-0.5 h-2.5 bg-slate-300" />
                               </div>
@@ -685,7 +1172,7 @@ export default function App() {
                    {/* Operator Identity */}
                    <div className="w-full lg:w-1/4">
                      <div className="flex items-center gap-2.5 mb-1.5">
-                       <h3 className="font-display font-extrabold text-lg text-slate-900">IntrCity SmartBus</h3>
+                       <h3 className="font-display font-extrabold text-lg text-slate-950">IntrCity SmartBus</h3>
                        <span className="text-[10px] font-bold bg-indigo-50 text-brand-primary border border-indigo-100 px-2 py-0.5 rounded-full uppercase">Seater</span>
                      </div>
                      <p className="text-xs font-semibold text-slate-400">A/C Seater (2+2 Layout)</p>
@@ -752,7 +1239,7 @@ export default function App() {
                    </div>
                  </div>
 
-                 {/* IntrCity Seat Map - FULLY REDESIGNED & COMPLETED */}
+                 {/* IntrCity Seat Map */}
                  {selectedBus === 'intrcity' && (
                     <div className="mt-8 pt-8 border-t border-slate-100 animate-fade-in">
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -1023,7 +1510,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="font-display text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Three Simple Steps</h2>
-            <p className="text-slate-500 font-medium">Bespoke splitting mechanisms engineered to deliver travel convenience.</p>
+            <p className="text-slate-500 font-medium text-sm">Bespoke splitting mechanisms engineered to deliver travel convenience.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -1212,7 +1699,13 @@ export default function App() {
         <div className="max-w-4xl mx-auto relative z-10">
           <h2 className="font-display text-3xl md:text-4xl font-extrabold text-white mb-6">Redesigning Modern Commuting.</h2>
           <p className="text-indigo-100 text-base mb-8 max-w-xl mx-auto">Join a trusted biometric-vetted network of split-fare travelers today. Split expenses. Move better.</p>
-          <button className="bg-white text-slate-900 px-8 py-4 rounded-2xl font-bold text-base hover:bg-slate-50 transition-all hover:scale-[1.02] shadow-xl">
+          <button 
+            className="bg-white text-slate-900 px-8 py-4 rounded-2xl font-bold text-base hover:bg-slate-50 transition-all hover:scale-[1.02] shadow-xl"
+            onClick={() => {
+              setAuthStep('login');
+              setShowAuthGate(true);
+            }}
+          >
             Start Traveling Smart
           </button>
         </div>
